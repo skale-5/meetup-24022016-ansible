@@ -1,0 +1,49 @@
+---
+- name: install drone dependencies
+  package: "name={{item}} state=present update_cache=yes"
+  with_items:
+    - docker.io
+    - python-pip
+
+- name: install docker ansible dependencies
+  pip: "name={{item}} state=present"
+  with_items:
+    - docker-py==1.1.0
+
+
+- name: drone container
+  docker:
+    name: drone
+    image: drone/drone
+    state: started
+    ports:
+      - "8000:8000"
+    volumes:
+      - "/var/lib/drone:/var/lib/drone"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    restart_policy: always
+    env:
+      REMOTE_DRIVER: "gogs"
+      REMOTE_CONFIG: "http://groove{{hostvars[inventory_hostname]['tags.Index']}}.neoxia-labs.com/?open=True"
+    
+    
+#- name: get gogs binary
+#  unarchive: src={{gogs_url}} dest=/home/git copy=no owner=git group=git creates=/home/git/gogs
+#
+#- name: create init file
+#  command: "cp /home/git/gogs/scripts/init/debian/gogs /etc/init.d/" 
+#  args:
+#    creates: "/etc/init.d/gogs"
+#
+#- name: make init file executable
+#  file: path=/etc/init.d/gogs mode=0755
+#
+#- name: create gogs conf dir
+#  file:  path=/home/git/gogs/custom/conf state=directory owner=git group=git
+#
+#- name: create gogs conf
+#  template: src=app.ini.j2 dest=/home/git/gogs/custom/conf/app.ini owner=git group=git
+#  notify: restart gogs
+#
+#- name: start gogs
+#  service: name=gogs state=started

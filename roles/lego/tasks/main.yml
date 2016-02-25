@@ -1,0 +1,26 @@
+---
+- name: download lego dependencies
+  package: name={{item}} state=present
+  with_items:
+    - tar
+    - python-pip
+
+- name: download python dependencies
+  pip: name=pexpect state=present
+
+- name: download lego
+  get_url: url={{lego_url}} dest=/tmp/lego.tar.xz
+
+- name: untar lego
+  unarchive: src=/tmp/lego.tar.xz dest=/usr/bin copy=no
+
+- name: chmod lego as executable
+  file: path=/usr/bin/lego mode=0755
+
+- name: get Lets Encrypt certificate
+  expect:
+    command: "/usr/bin/lego -d {{lego_domain}} -m {{lego_email}} --path {{lego_cert_path}} run"
+    creates: "{{lego_cert_path}}/certificates/{{lego_domain}}.crt"
+    responses:
+      '.*TOS.*': "y"
+
